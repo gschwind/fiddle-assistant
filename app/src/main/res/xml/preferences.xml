@@ -1,0 +1,23 @@
+<!--
+  ~ Copyright 2020 Benoit Gschwind <gschwind@gnu-log.net>
+  -->
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ListPreference
+        android:entries="@array/music_notation_entries"
+        android:key="music_notation"
+        android:title="@string/music_notation"
+        android:entryValues="@array/music_notation_values"
+        app:useSimpleSummaryProvider="true" />
+
+    <EditTextPreference
+        android:defaultValue="440"
+        android:key="base_frequency"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Set frequency of reference A/La"
+        app:useSimpleSummaryProvider="true" />
+
+</PreferenceScreen>
