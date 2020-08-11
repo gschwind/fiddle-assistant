@@ -257,7 +257,7 @@ public class SlidingNotesView extends View {
         float current_note = (float)f;
 
         if (!Float.valueOf(current_note).isNaN()) {
-            if (Math.abs(previous_note - current_note) < 0.5) {
+            if (Math.abs(previous_note - current_note) < 0.5 || true) {
                 notes.addFirst(new Float(current_note));
                 goto_valid_note = current_note;
             } else {

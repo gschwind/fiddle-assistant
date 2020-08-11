@@ -142,7 +142,7 @@ public class ScaleNotesView extends View {
         scale_current_note = scale_goto_note;
 
         if (!Float.valueOf(current_note).isNaN() && current_note > 12.0) {
-            if (Math.abs(previous_note - current_note) < 0.5)
+            if (Math.abs(previous_note - current_note) < 0.5 || true)
                 scale_goto_note = Math.round(current_note);
             previous_note = current_note;
         }
