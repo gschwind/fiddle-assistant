@@ -150,6 +150,12 @@ struct tone_handler {
 		std::sort(diff.begin(), diff.end());
 		float diff_min = diff[diff.size()/2];
 
+		// Sanity check: the freq of the maximum energy must be divisible by the diff_min.
+		float check = std::fabs(freq/diff_min - std::round(freq/diff_min))*diff_min;
+		if (check > 3.0f) {
+			return std::nan("");
+		}
+
 		return max_freq/std::floor(max_freq/diff_min+0.5)*freq_factor;
 	}
 
