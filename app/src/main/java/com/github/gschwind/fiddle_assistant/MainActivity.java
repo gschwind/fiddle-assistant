@@ -61,12 +61,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     private double frequency_to_diatonic_note(double frequency)
     {
-        return 12.0 * Math.log(frequency / base_frequency) / Math.log(2.0) + 72.0;
+        return 12.0 * Math.log(frequency / base_frequency) / Math.log(2.0) + 60.0;
     }
 
     private double diatonic_note_to_frequency(double diatonic_note)
     {
-        return base_frequency * Math.pow(2.0, (diatonic_note - 72.0) / 12.0);
+        return base_frequency * Math.pow(2.0, (diatonic_note - 60.0) / 12.0);
     }
 
     @Override
