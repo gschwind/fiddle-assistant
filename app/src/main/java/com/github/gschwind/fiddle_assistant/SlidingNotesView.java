@@ -37,6 +37,7 @@ public class SlidingNotesView extends View {
     static boolean BLACK_BACKGROUND = false;
 
     int POINT_HEIGHT;
+    int POINT_BORDER_WIDTH;
     int LINE_SPACING;
     int LEFT_SPACING;
 
@@ -83,6 +84,7 @@ public class SlidingNotesView extends View {
 
         LINE_SPACING = (int)(density*15.0f)+1;
         POINT_HEIGHT = (int)(density*4.0f)+1;
+        POINT_BORDER_WIDTH = (int)(density*1.0f)+1;
 
         notes = new LinkedList<Float>();
 
@@ -204,7 +206,7 @@ public class SlidingNotesView extends View {
                     double pos = Math.min(0.5, Math.max(-0.5, f - note));
                     double alpha = Math.min(1.0, Math.abs(pos * 3.0));
                     notesColor.setARGB(255, (int) (255.0 * Math.min(1.0, 2 * alpha)), (int) (255.0 * Math.min(1.0, 2 * (1.0 - alpha))), 0);
-                    canvas.drawRect((i * density * 2 + LEFT_SPACING - POINT_HEIGHT + density*1), (int) Math.round(local_base_line - y - POINT_HEIGHT + density * 1), (i * density * 2 + LEFT_SPACING + POINT_HEIGHT - density * 1), (int) Math.round(local_base_line - y + POINT_HEIGHT - density * 1), notesColor);
+                    canvas.drawRect((i * density * 2 + LEFT_SPACING - POINT_HEIGHT + POINT_BORDER_WIDTH), (int) Math.round(local_base_line - y - POINT_HEIGHT + POINT_BORDER_WIDTH), (i * density * 2 + LEFT_SPACING + POINT_HEIGHT - POINT_BORDER_WIDTH), (int) Math.round(local_base_line - y + POINT_HEIGHT - POINT_BORDER_WIDTH), notesColor);
                 }
             }
             ++i;
