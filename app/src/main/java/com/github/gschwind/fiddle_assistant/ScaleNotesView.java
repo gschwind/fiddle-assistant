@@ -36,6 +36,7 @@ public class ScaleNotesView extends View {
     Paint grayColor;
     Paint cursorColor;
 
+    float density;
 
     float current_note;
 
@@ -60,10 +61,11 @@ public class ScaleNotesView extends View {
     public ScaleNotesView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
+        density = getResources().getDisplayMetrics().density;
 
         blackColor = new Paint(Paint.ANTI_ALIAS_FLAG);
         blackColor.setARGB(255, 0, 0, 0);
-        blackColor.setTextSize(50.0f);
+        blackColor.setTextSize(24.0f*density);
 
         grayColor = new Paint(Paint.ANTI_ALIAS_FLAG);
         grayColor.setARGB(255, 128, 128, 128);
@@ -82,7 +84,13 @@ public class ScaleNotesView extends View {
     protected void onDraw (Canvas canvas) {
         super.onDraw(canvas);
 
-        float baseline = height/2f + 40f;
+        float scale_half_tone_width = width/2.5f;
+
+        float scale_height = height-blackColor.getTextSize();
+        float baseline = scale_height/2f + blackColor.getTextSize();
+        float large_bar_height = 0.7f*scale_height*0.5f;
+        float thin_bar_height = 0.4f*scale_height*0.5f;
+        float circle_radius = 0.3f*scale_height*0.5f;
 
         int nearest = Math.round(scale_current_note);
         for (int k = -2; k < 3; ++k) {
@@ -91,10 +99,10 @@ public class ScaleNotesView extends View {
             int n = i % 12;     //note
             String text = String.format("%s %d", note_names[n], o);
             float textWidth = blackColor.measureText(text);
-            canvas.drawText(text, (width/2.0f+(i- scale_current_note)*500.0f-textWidth/2.0f), baseline-110, blackColor);
-            canvas.drawLine(width/2+(i- scale_current_note)*500, baseline-80, width/2+(i- scale_current_note)*500, baseline+80, grayColor);
-            for (int l = 10; l <= 90; l += 10) {
-                canvas.drawLine(width/2+l*5+((i- scale_current_note))*500, baseline-40, width/2+l*5+(i- scale_current_note)*500, baseline+40, grayColor);
+            canvas.drawText(text, width/2.0f+(i- scale_current_note)*scale_half_tone_width-textWidth/2.0f, blackColor.getTextSize(), blackColor);
+            canvas.drawLine((width/2+(i- scale_current_note)*scale_half_tone_width), baseline-large_bar_height, width/2+(i- scale_current_note)*scale_half_tone_width, baseline+large_bar_height, grayColor);
+            for (int l = 1; l < 10; l += 1) {
+                canvas.drawLine(width/2.0f+scale_half_tone_width*l/10.0f+(i- scale_current_note)*scale_half_tone_width, baseline-thin_bar_height, (width/2+scale_half_tone_width*l*0.1f+(i- scale_current_note)*scale_half_tone_width), baseline+thin_bar_height, grayColor);
             }
         }
 
@@ -103,14 +111,14 @@ public class ScaleNotesView extends View {
             double pos = Math.min(0.5, Math.max(-0.5, previous_note_shown - scale_current_note));
             double alpha = Math.min(1.0, Math.abs(pos*3.0));
             cursorColor.setARGB(255, (int)(255.0*Math.min(1.0, 2*alpha)), (int)(255.0*Math.min(1.0, 2*(1.0 - alpha))), 0);
-            canvas.drawCircle((float)(width/2+pos*500), height/2+40, 30, blackColor);
-            canvas.drawCircle((float)(width/2+pos*500), height/2+40, 28, cursorColor);
+            canvas.drawCircle((float)(width/2+pos*scale_half_tone_width), baseline, circle_radius, blackColor);
+            canvas.drawCircle((float)(width/2+pos*scale_half_tone_width), baseline, circle_radius-2, cursorColor);
         } else if ((Math.abs(previous_note_shown - scale_current_note) < 0.5)) {
             double pos = Math.min(0.5, Math.max(-0.5, previous_note_shown - scale_current_note));
             double alpha = Math.min(1.0, Math.abs(pos*3.0));
             cursorColor.setARGB(255, (int)(255.0*Math.min(1.0, 2*alpha)), (int)(255.0*Math.min(1.0, 2*(1.0 - alpha))), 0);
-            canvas.drawCircle((float)(width/2+pos*500), height/2+40, 30, blackColor);
-            canvas.drawCircle((float)(width/2+pos*500), height/2+40, 28, cursorColor);
+            canvas.drawCircle((float)(width/2+pos*scale_half_tone_width), baseline, circle_radius, blackColor);
+            canvas.drawCircle((float)(width/2+pos*scale_half_tone_width), baseline, circle_radius-2, cursorColor);
         }
 
     }
