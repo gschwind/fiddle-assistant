@@ -28,17 +28,16 @@ import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.View;
 
+import java.io.Console;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
 
 public class SlidingNotesView extends View {
-    static int LINE_SPACING = 30;
-    static int LEFT_SPACING_ENGLISH = 40;
-    static int LEFT_SPACING_FRENCH = 70;
     static boolean BLACK_BACKGROUND = false;
-    static int POINT_HEIGHT = 8;
 
+    int POINT_HEIGHT;
+    int LINE_SPACING;
     int LEFT_SPACING;
 
     LinkedList<Float> notes;
@@ -55,6 +54,8 @@ public class SlidingNotesView extends View {
 
     int width;
     int height;
+
+    float density;
 
     int base_line;
 
@@ -78,41 +79,43 @@ public class SlidingNotesView extends View {
     public SlidingNotesView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
-        note_names = note_names_english;
-        LEFT_SPACING = LEFT_SPACING_ENGLISH;
+        density = getResources().getDisplayMetrics().density;
+
+        LINE_SPACING = (int)(density*15.0f)+1;
+        POINT_HEIGHT = (int)(density*4.0f)+1;
 
         notes = new LinkedList<Float>();
 
         grayColor = new Paint(Paint.ANTI_ALIAS_FLAG);
         grayColor.setARGB(255, 128, 128, 128);
-        grayColor.setTextSize(30.0f);
+        grayColor.setTextSize(density*12.0f);
 
         blackColor = new Paint(Paint.ANTI_ALIAS_FLAG);
         blackColor.setARGB(255, 0, 0, 0);
-        blackColor.setTextSize(30.0f);
+        blackColor.setTextSize(density*12.0f);
 
         minorColor = new Paint(Paint.ANTI_ALIAS_FLAG);
         minorColor.setARGB(255, 224, 224, 224);
 
         majorColor = new Paint(Paint.ANTI_ALIAS_FLAG);
-        majorColor.setARGB(255, 224, 224, 224);
-        majorColor.setTextSize(30.0f);
+        majorColor.setARGB(255, 190, 190, 190);
+        majorColor.setTextSize(density*12.0f);
 
         notesColor = new Paint(Paint.ANTI_ALIAS_FLAG);
         notesColor.setARGB(255, 0, 0, 255);
 
         referColor = new Paint(Paint.ANTI_ALIAS_FLAG);
         referColor.setARGB(255, 128, 128, 128);
-        referColor.setTextSize(30.0f);
+        referColor.setTextSize(density*12.0f);
 
         highColor = new Paint(Paint.ANTI_ALIAS_FLAG);
         highColor.setARGB(255, 0, 0, 255);
-        highColor.setTextSize(30.0f);
+        highColor.setTextSize(density*12.0f);
         highColor.setTypeface(Typeface.DEFAULT_BOLD);
 
         cursorColor = new Paint(Paint.ANTI_ALIAS_FLAG);
         cursorColor.setARGB(255, 255, 245, 200);
-        cursorColor.setTextSize(30.0f);
+        cursorColor.setTextSize(density*12.0f);
         cursorColor.setTypeface(Typeface.DEFAULT_BOLD);
 
 
@@ -124,6 +127,8 @@ public class SlidingNotesView extends View {
         last_valid_note = 48f;
 
         notes.addFirst(Float.NaN);
+
+        updateNoteNames("english");
 
     }
 
@@ -148,7 +153,7 @@ public class SlidingNotesView extends View {
             if (!f.isNaN()) {
                 double y = (f - base_note) * LINE_SPACING;
                 if (y > -2.0 * LINE_SPACING && y < height + 2 * LINE_SPACING) {
-                    canvas.drawRect(i * 2 + LEFT_SPACING - POINT_HEIGHT, (int) Math.round(local_base_line - y - POINT_HEIGHT), i * 2 + LEFT_SPACING + POINT_HEIGHT, (int) Math.round(local_base_line - y + POINT_HEIGHT), blackColor);
+                    canvas.drawRect((i * density * 2 + LEFT_SPACING - POINT_HEIGHT), (int) Math.round(local_base_line - y - POINT_HEIGHT), (i * density * 2 + LEFT_SPACING + POINT_HEIGHT), (int) Math.round(local_base_line - y + POINT_HEIGHT), blackColor);
                 }
             }
             ++i;
@@ -168,14 +173,14 @@ public class SlidingNotesView extends View {
         base_note += 0.1*(goto_note-base_note);
         last_valid_note += 0.1*(goto_valid_note-last_valid_note);
 
-        canvas.drawRect(0, local_base_line-(last_valid_note-base_note-1.5f)*LINE_SPACING, width, local_base_line-(last_valid_note-base_note+1.5f)*LINE_SPACING, cursorColor);
+        canvas.drawRect(0, (local_base_line-(last_valid_note-base_note-1.5f)*LINE_SPACING), width, (local_base_line-(last_valid_note-base_note+1.5f)*LINE_SPACING), cursorColor);
 
         for (int i = 0; i < 120; ++i) {
             float y = (i-base_note) * LINE_SPACING;
 
             if (y > -2.0f*LINE_SPACING && y < height+2.0f*LINE_SPACING) {
-                canvas.drawRect(LEFT_SPACING, local_base_line - y - 1, width, local_base_line - y + 1, lineNoteColor[i % 12]);
-                canvas.drawText(note_names[i % 12], 3.0f, local_base_line - y + 10.0f, grayColor);
+                canvas.drawRect(LEFT_SPACING, (local_base_line - y - 1), width, (local_base_line - y + 1), lineNoteColor[i % 12]);
+                canvas.drawText(note_names[i % 12], density*3.0f, (local_base_line - y + grayColor.getTextSize()/2.0f), grayColor);
             }
         }
 
@@ -199,7 +204,7 @@ public class SlidingNotesView extends View {
                     double pos = Math.min(0.5, Math.max(-0.5, f - note));
                     double alpha = Math.min(1.0, Math.abs(pos * 3.0));
                     notesColor.setARGB(255, (int) (255.0 * Math.min(1.0, 2 * alpha)), (int) (255.0 * Math.min(1.0, 2 * (1.0 - alpha))), 0);
-                    canvas.drawRect(i * 2 + LEFT_SPACING - POINT_HEIGHT + 2, (int) Math.round(local_base_line - y - POINT_HEIGHT + 2), i * 2 + LEFT_SPACING + POINT_HEIGHT - 2, (int) Math.round(local_base_line - y + POINT_HEIGHT - 2), notesColor);
+                    canvas.drawRect((i * density * 2 + LEFT_SPACING - POINT_HEIGHT + density*1), (int) Math.round(local_base_line - y - POINT_HEIGHT + density * 1), (i * density * 2 + LEFT_SPACING + POINT_HEIGHT - density * 1), (int) Math.round(local_base_line - y + POINT_HEIGHT - density * 1), notesColor);
                 }
             }
             ++i;
@@ -226,14 +231,22 @@ public class SlidingNotesView extends View {
     public void updateNoteNames(String v) {
         if (v.equals("english")) {
             note_names = note_names_english;
-            LEFT_SPACING = LEFT_SPACING_ENGLISH;
         } else if (v.equals("french")) {
             note_names = note_names_french;
-            LEFT_SPACING = LEFT_SPACING_FRENCH;
         } else {
             note_names = note_names_english;
-            LEFT_SPACING = LEFT_SPACING_ENGLISH;
         }
+
+        // Compute max length of notes names.
+        LEFT_SPACING = 0;
+        for (int i = 0; i < note_names.length; ++i) {
+            int m = 1+(int)grayColor.measureText(note_names[i]);
+            if (LEFT_SPACING < m) {
+                LEFT_SPACING = m;
+            }
+        }
+        LEFT_SPACING += 4.0*density;
+
         invalidate();
     }
 
