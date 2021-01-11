@@ -14,7 +14,7 @@
         <com.github.gschwind.fiddle_assistant.ScaleNotesView
             android:id="@+id/scaleNotesView"
             android:layout_width="match_parent"
-            android:layout_height="118dp" />
+            android:layout_height="100dp" />
 
         <com.github.gschwind.fiddle_assistant.SlidingNotesView
             android:id="@+id/slidingNotesView"

@@ -65,7 +65,7 @@ public class ScaleNotesView extends View {
 
         blackColor = new Paint(Paint.ANTI_ALIAS_FLAG);
         blackColor.setARGB(255, 0, 0, 0);
-        blackColor.setTextSize(24.0f*density);
+        blackColor.setTextSize(20.0f*density);
 
         grayColor = new Paint(Paint.ANTI_ALIAS_FLAG);
         grayColor.setARGB(255, 128, 128, 128);
