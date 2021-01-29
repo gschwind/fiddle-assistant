@@ -19,5 +19,13 @@
         android:singleLine="true"
         android:title="Set frequency of reference A/La"
         app:useSimpleSummaryProvider="true" />
+    <ListPreference
+        android:defaultValue="true"
+        android:entries="@array/sample_frequency_entries"
+        android:entryValues="@array/sample_frequency_values"
+        android:key="sample_frequency"
+        android:title="Sample frequency"
+        app:defaultValue="30"
+        app:useSimpleSummaryProvider="true" />
 
 </PreferenceScreen>

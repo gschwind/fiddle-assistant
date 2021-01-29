@@ -182,7 +182,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             if (base_frequency <= 55.0f)
                 base_frequency = 440.0f;
             freqView.setText(String.format("%.2f Hz", base_frequency));
-
+        } else if (key.equals("sample_frequency")) {
+            int i = Integer.valueOf(sharedPreferences.getString("sample_frequency", "30"));
+            if (audioThread != null)
+                audioThread.updateSampleFrequency(i);
         }
 
     }

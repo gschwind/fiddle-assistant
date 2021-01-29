@@ -34,6 +34,9 @@ public class AudioThread implements Runnable {
     private long opaqueNativeHandle; // store the pointer
     private int length_of_sample; // store the pointer
 
+    private int next_analisys_freq_counter;
+    private int rate;
+
     private MainActivityHandler handler;
 
     // Used to load the 'native-lib' library on application startup.
@@ -49,6 +52,7 @@ public class AudioThread implements Runnable {
     public AudioThread(MainActivityHandler handler) {
         this.handler = handler;
         this.opaqueNativeHandle = 0;
+
     }
 
     private static Pair<Integer, Integer> getValidSampleRates() {
@@ -77,7 +81,6 @@ public class AudioThread implements Runnable {
         int bufferSize;
         short[] audioData;
         int bufferReadResult;
-        int rate;
 
         {
             Pair<Integer, Integer> r = getValidSampleRates();
@@ -112,7 +115,7 @@ public class AudioThread implements Runnable {
 
             isAudioRecording = true;
 
-            int next_analisys_freq_counter = rate/NOTE_SAMPLE_RATE; //at less wait for this amount of data before next analisys
+            next_analisys_freq_counter = rate/NOTE_SAMPLE_RATE; //at less wait for this amount of data before next analisys
 
             int next_analisys = next_analisys_freq_counter;
 
@@ -166,6 +169,10 @@ public class AudioThread implements Runnable {
 
     }
 
+    public void updateSampleFrequency(int f) {
+        NOTE_SAMPLE_RATE = f;
+        next_analisys_freq_counter = rate / NOTE_SAMPLE_RATE;
+    }
 
     public native int initSampleRate(int sampleRate);
     public native float computeFreq(short[] arr, int offset, int length);

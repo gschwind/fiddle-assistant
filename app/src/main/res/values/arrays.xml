@@ -9,4 +9,22 @@
         <item>english</item>
         <item>french</item>
     </string-array>
+
+    <string-array name="sample_frequency_entries">
+        <item>10 Hz</item>
+        <item>20 Hz</item>
+        <item>30 Hz</item>
+        <item>40 Hz</item>
+        <item>50 Hz</item>
+        <item>60 Hz</item>
+    </string-array>
+
+    <string-array name="sample_frequency_values">
+        <item>10</item>
+        <item>20</item>
+        <item>30</item>
+        <item>40</item>
+        <item>50</item>
+        <item>60</item>
+    </string-array>
 </resources>
