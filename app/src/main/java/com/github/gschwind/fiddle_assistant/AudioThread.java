@@ -122,26 +122,50 @@ public class AudioThread implements Runnable {
             /* ffmpeg_audio encoding loop */
             while (isAudioRecording) {
 
-                if ((buf_offset + next_analisys) >= audioData.length) {
-                    System.arraycopy(audioData, buf_offset-length_of_sample, audioData, 0, length_of_sample);
-                    buf_offset = length_of_sample;
-                }
+                // Read all remining data to flush buffer if the computation is too slow.
+                do {
 
-                bufferReadResult = audioRecord.read(audioData, buf_offset, next_analisys);
+                    if ((buf_offset + 8192) >= audioData.length) {
+                        System.arraycopy(audioData, buf_offset-length_of_sample, audioData, 0, length_of_sample);
+                        buf_offset = length_of_sample;
+                    }
 
-                if (bufferReadResult > 0) {
+                    bufferReadResult = audioRecord.read(audioData, buf_offset, 8192, AudioRecord.READ_NON_BLOCKING);
+
+                    if (bufferReadResult < 0 ) {
+                        System.out.printf("AudioThreadError %d%n", bufferReadResult);
+                        return;
+                    }
+
                     buf_offset += bufferReadResult;
                     next_analisys -= bufferReadResult;
 
-                    if (next_analisys <= 0) {
-                        double freq = computeFreq(audioData, buf_offset - length_of_sample, length_of_sample);
-                        double energy = sampleEnergy(audioData, buf_offset - length_of_sample, length_of_sample);
-                        handler.sendMessage(Message.obtain(handler, 2, new Pair<>(new Double(freq), new Double(energy))));
-                        next_analisys = next_analisys_freq_counter;
+                } while (bufferReadResult > 0);
+
+                if (next_analisys > 0) {
+
+                    if ((buf_offset + next_analisys) >= audioData.length) {
+                        System.arraycopy(audioData, buf_offset - length_of_sample, audioData, 0, length_of_sample);
+                        buf_offset = length_of_sample;
                     }
-                } else {
-                    System.out.printf("AudioThreadError %d%n", bufferReadResult);
-                    return;
+
+                    bufferReadResult = audioRecord.read(audioData, buf_offset, next_analisys);
+
+                    if (bufferReadResult < 0) {
+                        System.out.printf("AudioThreadError %d%n", bufferReadResult);
+                        return;
+                    }
+
+                    buf_offset += bufferReadResult;
+                    next_analisys -= bufferReadResult;
+
+                }
+
+                if (next_analisys <= 0) {
+                    double freq = computeFreq(audioData, buf_offset - length_of_sample, length_of_sample);
+                    double energy = sampleEnergy(audioData, buf_offset - length_of_sample, length_of_sample);
+                    handler.sendMessage(Message.obtain(handler, 2, new Pair<>(new Double(freq), new Double(energy))));
+                    next_analisys = next_analisys_freq_counter;
                 }
 
             }
