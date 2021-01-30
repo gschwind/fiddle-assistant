@@ -105,6 +105,7 @@ struct tone_handler {
 //			return std::nan("");
 
 		std::vector<int> max_args;
+		max_args.reserve(20); // avoid useless realloc.
 
 		//max_args.push_back(0); // 0 is always a valid frequency for the diff
 		for (int i = 200; i < (g_fft_n/2-1); ++i) {
@@ -115,14 +116,17 @@ struct tone_handler {
 			if (bgn[i+1] > bgn[i])
 				continue;
 			max_args.push_back(i);
+
+			if (max_args.size() > 15)
+				return std::nan("");
+
 		}
 
 		if (max_args.size() <= 1)
 			return std::nan("");
 		if (max_args.size() <= 2)
 			return max_args[1];
-		if (max_args.size() > 15)
-			return std::nan("");
+
 
 		// sort regarding max picks
 		std::sort(max_args.begin(), max_args.end(), [bgn](int a, int b) -> bool { return bgn[a] > bgn[b]; });
