@@ -29,7 +29,7 @@ import android.util.Log;
 import android.util.Pair;
 
 public class AudioThread implements Runnable {
-    static int NOTE_SAMPLE_RATE = 25;
+    static int NOTE_SAMPLE_RATE = 30;
 
     private long opaqueNativeHandle; // store the pointer
     private int length_of_sample; // store the pointer
@@ -100,8 +100,8 @@ public class AudioThread implements Runnable {
         }
 
         try {
-            // using fairly big multiplier to avoid much move/copy buffer.
-            int buff_size_in_shorts = length_of_sample*100;
+            // store 2 seconds of record to avoid much move/copy buffer.
+            int buff_size_in_shorts = rate*2;
             int buf_offset = 0;
 
             /* set audio recorder parameters, and start recording */
@@ -117,23 +117,23 @@ public class AudioThread implements Runnable {
 
             next_analisys_freq_counter = rate/NOTE_SAMPLE_RATE; //at less wait for this amount of data before next analisys
 
-            int next_analisys = next_analisys_freq_counter;
+            int next_analisys = length_of_sample;
 
             /* ffmpeg_audio encoding loop */
             while (isAudioRecording) {
 
-                if ((buf_offset + length_of_sample) >= audioData.length) {
+                if ((buf_offset + next_analisys) >= audioData.length) {
                     System.arraycopy(audioData, buf_offset-length_of_sample, audioData, 0, length_of_sample);
                     buf_offset = length_of_sample;
                 }
 
-                bufferReadResult = audioRecord.read(audioData, buf_offset, length_of_sample);
+                bufferReadResult = audioRecord.read(audioData, buf_offset, next_analisys);
 
                 if (bufferReadResult > 0) {
                     buf_offset += bufferReadResult;
                     next_analisys -= bufferReadResult;
 
-                    if (next_analisys < 0) {
+                    if (next_analisys <= 0) {
                         double freq = computeFreq(audioData, buf_offset - length_of_sample, length_of_sample);
                         double energy = sampleEnergy(audioData, buf_offset - length_of_sample, length_of_sample);
                         handler.sendMessage(Message.obtain(handler, 2, new Pair<>(new Double(freq), new Double(energy))));
