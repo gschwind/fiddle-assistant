@@ -41,6 +41,7 @@ struct tone_handler {
 	double freq_factor;
 	int sample_length;
 	int _sample_rate;
+	int _sample_ratio;
 
 	double max_spec;
 
@@ -56,7 +57,7 @@ struct tone_handler {
 		max_spec = 0.0;
 	}
 
-	int init_sample_rate(int sample_rate) {
+	int init_sample_rate(int sample_rate, int sample_ratio) {
 		// I want convolve my fourier transform with 20 Hz sigma.
 		// This mean omega is 2*pi*20, that mean sigma in time space must be 1.0/(2*pi*20)
 		// Thus to have a good gausian I need at less 3 sigma at both side of the center of the gaussian.
@@ -64,9 +65,10 @@ struct tone_handler {
 		// The sample length should be:
 
 		_sample_rate = sample_rate;
-		freq_factor = static_cast<double>(sample_rate)/static_cast<double>(g_fft_n);
+		_sample_ratio = sample_ratio;
+		freq_factor = static_cast<double>(sample_rate)/static_cast<double>(sample_ratio)/static_cast<double>(g_fft_n);
 
-		double time_delta = 1.0/sample_rate;
+		double time_delta = static_cast<double>(sample_ratio)/static_cast<double>(sample_rate);
 		double sigma = 1.0/(2.0*_PI()*20.0);
 		// sample_length = 2.0*4.0*sigma/time_delta; that can be simplified as follow
 		sample_length = 6.0*sample_rate*sigma+1;
@@ -157,11 +159,11 @@ struct tone_handler {
 	template<typename TX>
 	double compute_freq(TX * data, std::size_t len)
 	{
-		len = std::min<std::size_t>(len, sample_length);
+		len = std::min<std::size_t>(len/_sample_ratio, sample_length);
 
 		// reverse the signal, ensuring the analysis occure to last aquired data.
 		TX * end = &data[len-1];
-		for (int i = 0; i < len; ++i, --end) {
+		for (int i = 0; i < len; i += _sample_ratio, end -= _sample_ratio) {
             g_fft_ibuffer[i] = std::complex<T>((*end) * gaussian_filter[i], 0.0f);
         }
 

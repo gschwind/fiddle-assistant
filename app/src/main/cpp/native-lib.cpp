@@ -71,14 +71,14 @@ void setHandle(JNIEnv *env, jobject obj, T *t)
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_github_gschwind_fiddle_1assistant_AudioThread_initSampleRate(JNIEnv *env, jobject thiz, jint sample_rate) {
+Java_com_github_gschwind_fiddle_1assistant_AudioThread_initSampleRate(JNIEnv *env, jobject thiz, jint sample_rate, jint ratio) {
     auto * thandler = getHandle<tone_handler<float, 1u<<15u>>(env, thiz);
     if (thandler == nullptr) {
         thandler = new tone_handler<float, 1u<<15u>;
         setHandle(env, thiz, thandler);
     }
 
-    int err = thandler->init_sample_rate(sample_rate);
+    int err = thandler->init_sample_rate(sample_rate, ratio);
 
     setIntField(env, thiz, "length_of_sample", thandler->sample_length);
 

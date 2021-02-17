@@ -101,7 +101,7 @@ public class AudioThread implements Runnable {
             return;
         }
 
-        int err = initSampleRate(rate);
+        int err = initSampleRate(rate, r);
         if(err < 0) {
             Log.e(LOG_TAG, "failled to initSampleRate");
             return;
@@ -206,7 +206,7 @@ public class AudioThread implements Runnable {
         next_analisys_freq_counter = rate / NOTE_SAMPLE_RATE;
     }
 
-    public native int initSampleRate(int sampleRate);
+    public native int initSampleRate(int sampleRate, int ratio);
     public native float computeFreq(short[] arr, int offset, int length);
     public native float sampleEnergy(short[] arr, int offset, int length);
     public native void dispose();
