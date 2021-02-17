@@ -110,7 +110,7 @@ struct tone_handler {
 		max_args.reserve(20); // avoid useless realloc.
 
 		//max_args.push_back(0); // 0 is always a valid frequency for the diff
-		for (int i = 200; i < (g_fft_n/2-1); ++i) {
+		for (int i = 50; i < (g_fft_n/2-1); ++i) {
 			if (bgn[i] < max*0.05)
 				continue;
 			if (bgn[i-1] > bgn[i])
