@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         // Example of a call to a native method
 //        freqView.setText(String.format("%.2f Hz", v.first));
 
-        energyView.setText(String.format("%.0f", v.second));
+        energyView.setText(String.format("%.0f Hz", v.second));
 
         double diatonic_note = frequency_to_diatonic_note(v.first);
         slidingNotesView.appendDouble(diatonic_note);
