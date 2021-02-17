@@ -164,7 +164,7 @@ public class AudioThread implements Runnable {
                 if (next_analisys <= 0) {
                     double freq = computeFreq(audioData, buf_offset - length_of_sample, length_of_sample);
                     double energy = sampleEnergy(audioData, buf_offset - length_of_sample, length_of_sample);
-                    handler.sendMessage(Message.obtain(handler, 2, new Pair<>(new Double(freq), new Double(energy))));
+                    handler.sendMessage(Message.obtain(handler, 2, new Pair<>(new Double(freq), new Double(rate))));
                     next_analisys = next_analisys_freq_counter;
                 }
 
