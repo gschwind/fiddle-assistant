@@ -71,14 +71,14 @@ struct tone_handler {
 		double time_delta = static_cast<double>(sample_ratio)/static_cast<double>(sample_rate);
 		double sigma = 1.0/(2.0*_PI()*20.0);
 		// sample_length = 2.0*4.0*sigma/time_delta; that can be simplified as follow
-		sample_length = 6.0*sample_rate*sigma+1;
+		sample_length = (6*sample_rate*sigma)/sample_ratio+1;
 
 		if (sample_length > g_fft_n)
 		    return -1;
 
 		double sum_fix = 0.0;
 		for (int i = 0; i < sample_length; ++i) {
-			sum_fix += gaussian_filter[i] = _gauss(time_delta*(i-static_cast<int>(sample_length/2)), sigma);
+			sum_fix += gaussian_filter[i] = _gauss(time_delta*(i-sample_length/2), sigma);
 		}
 
 		for (int i = 0; i < sample_length; ++i) {
@@ -109,7 +109,7 @@ struct tone_handler {
 		std::vector<int> max_args;
 		max_args.reserve(20); // avoid useless realloc.
 
-		//max_args.push_back(0); // 0 is always a valid frequency for the diff
+		max_args.push_back(0); // 0 is always a valid frequency for the diff
 		for (int i = 50; i < (g_fft_n/2-1); ++i) {
 			if (bgn[i] < max*0.05)
 				continue;
@@ -126,12 +126,12 @@ struct tone_handler {
 
 		if (max_args.size() <= 1)
 			return std::nan("");
-		if (max_args.size() <= 2)
-			return max_args[1];
 
+        // sort regarding max picks
+        std::sort(max_args.begin(), max_args.end(), [bgn](int a, int b) -> bool { return bgn[a] > bgn[b]; });
 
-		// sort regarding max picks
-		std::sort(max_args.begin(), max_args.end(), [bgn](int a, int b) -> bool { return bgn[a] > bgn[b]; });
+        if (max_args.size() <= 3)
+			return max_args[0]*freq_factor;
 
 		// Keep at most 8 hamonics
 		max_args.resize(std::min<int>(max_args.size(), 8));
@@ -159,12 +159,18 @@ struct tone_handler {
 	template<typename TX>
 	double compute_freq(TX * data, std::size_t len)
 	{
+        // reverse the signal, ensuring the analysis occure to last aquired data.
+        TX * end = &data[len-1];
+
 		len = std::min<std::size_t>(len/_sample_ratio, sample_length);
 
-		// reverse the signal, ensuring the analysis occure to last aquired data.
-		TX * end = &data[len-1];
-		for (int i = 0; i < len; i += _sample_ratio, end -= _sample_ratio) {
+		for (int i = 0; i < len; ++i) {
+//		    T s = 0.0;
+//		    for (int j = 0; j < _sample_ratio; ++j) {
+//		        s += *end--;
+//		    }
             g_fft_ibuffer[i] = std::complex<T>((*end) * gaussian_filter[i], 0.0f);
+            end-=_sample_ratio;
         }
 
 		g_fft_plan.transform(&g_fft_ibuffer[0], &g_fft_obuffer[0]);
@@ -182,7 +188,7 @@ struct tone_handler {
 	    for (int i = 0; i < len; ++i) {
 	        sum += data[i]*data[i];
 	    }
-	    return sum/_sample_rate;
+	    return sum/len;
 	}
 
 };

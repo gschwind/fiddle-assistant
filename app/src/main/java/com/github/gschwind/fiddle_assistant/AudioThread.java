@@ -44,7 +44,7 @@ public class AudioThread implements Runnable {
     // Well known rates and their sample ratio in prefered order
     // it's expected to prefer lower rates
     static int[] rates = { 8000, 11025, 16000, 22050, 44100, 48000};
-    static int[] ratio = {    1,     1,     2,     3,     5,     6};
+    static int[] ratio = {    1,     1,     2,     2,     4,     6};
 
     // Used to load the 'native-lib' library on application startup.
     static {
@@ -64,7 +64,7 @@ public class AudioThread implements Runnable {
 
     private static Pair<Integer, Integer> getValidSampleRates() {
 
-        for (int i = 0; i < rates.length;  ++i) {  // add the rates you wish to check against
+        for (int i = 1; i < rates.length;  ++i) {  // add the rates you wish to check against
             int rate = rates[i];
             int bufferSize = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_IN_MONO,
                     AudioFormat.ENCODING_PCM_16BIT);
@@ -90,16 +90,16 @@ public class AudioThread implements Runnable {
         int bufferReadResult;
 
         {
-            Pair<Integer, Integer> r = getValidSampleRates();
-            rate = rates[r.first];
-            this.r = ratio[r.first];
-            bufferSize = r.second; // scale to shorts
+            Pair<Integer, Integer> x = getValidSampleRates();
+            if (x.first < 0) {
+                // TODO: print error message.
+                return;
+            }
+            rate = rates[x.first];
+            r = ratio[x.first];
+            bufferSize = x.second; // scale to shorts
         }
 
-        if (rate < 0) {
-            // TODO: print error message.
-            return;
-        }
 
         int err = initSampleRate(rate, r);
         if(err < 0) {
