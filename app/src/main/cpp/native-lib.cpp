@@ -95,7 +95,7 @@ jint offset, jint length) {
 
     jsize len = env->GetArrayLength(arr);
     jshort * data = env->GetShortArrayElements(arr, 0);
-    float freq = thandler->compute_freq(&data[offset], length);
+    float freq = thandler->compute_freq(&data[offset], &data[offset+length]);
     env->ReleaseShortArrayElements(arr, data, 0);
     return freq;
 }

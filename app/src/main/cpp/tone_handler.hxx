@@ -1,6 +1,6 @@
 /*
 
-Copyright (2020) Benoit Gschwind <gschwind@gnu-log.net>
+Copyright (2020-2021) Benoit Gschwind <gschwind@gnu-log.net>
 
 This file is part of fiddle-assistant.
 
@@ -36,15 +36,19 @@ struct tone_handler {
 	std::array<typename kissfft<T>::cpx_t, g_fft_n> g_fft_obuffer{kissfft<float>::cpx_t{}};
 	kissfft<T> g_fft_plan{g_fft_n, false};
 	std::array<T, g_fft_n> gaussian_filter;
-	std::array<T, g_fft_n> spectrum;
+	std::array<T, g_fft_n/2> spectrum;
+
+	std::vector<int> max_args;
+	std::vector<int> diff;
 
 	double freq_factor;
 	int sample_length;
 	int _sample_rate;
 
-	double max_spec;
+	double min_volume;
+	double cur_volume;
 
-	static inline constexpr float _PI() { return std::atan(1.0)*4.0; }
+	static inline constexpr float _PI() { return 3.14159265358979323846; }
 
 	// not-normed gaussian.
 	static inline constexpr float _gauss(float x, float sigma)
@@ -52,8 +56,20 @@ struct tone_handler {
 	    return std::exp(-(x*x)/(2*(sigma*sigma)));
 	}
 
+	/**
+	 * Compute if _n_ is divisible by _d_ with a tolerence _t_
+	 **/
+	static inline bool is_divisible(double n, double d, double t) {
+		double p = std::round(n/d);
+		return std::fabs(p*d-n)<t;
+	}
+
 	tone_handler () {
-		max_spec = 0.0;
+		max_args.reserve(50); // avoid useless realloc.
+		diff.reserve(50);
+
+		min_volume = 1.0e10;
+		cur_volume = 0.0;
 	}
 
 	int init_sample_rate(int sample_rate) {
@@ -67,7 +83,7 @@ struct tone_handler {
 		freq_factor = static_cast<double>(sample_rate)/static_cast<double>(g_fft_n);
 
 		double time_delta = 1.0/sample_rate;
-		double sigma = 1.0/(2.0*_PI()*20.0);
+		double sigma = 1.0/(2.0*_PI()*30.0);
 		// sample_length = 2.0*4.0*sigma/time_delta; that can be simplified as follow
 		sample_length = 6.0*sample_rate*sigma+1;
 
@@ -90,79 +106,86 @@ struct tone_handler {
 	double find_frequency(T * bgn, T * end)
 	{
 
-		auto max_elem = std::max_element(bgn, end);
-		float freq = std::distance(bgn, max_elem);
+		auto max_elem = std::max_element(bgn+2, end);
+		double ref_freq = std::distance(bgn, max_elem);
 		float max = *max_elem;
 
-		// Implement a slow max diminishing
-		if (max_spec < max) {
-			max_spec = max;
-		} else {
-            max_spec += 0.001*(max-max_spec);
-		}
+		max_args.resize(0); // remove all elements
 
-//		if (max < 0.2*max_spec)
-//			return std::nan("");
-
-		std::vector<int> max_args;
-		max_args.reserve(20); // avoid useless realloc.
-
-		//max_args.push_back(0); // 0 is always a valid frequency for the diff
-		for (int i = 200; i < (g_fft_n/2-1); ++i) {
-			if (bgn[i] < max*0.05)
+		for (int i = 2; i < (g_fft_n/2-1); ++i) {
+			if (bgn[i] < max*0.10)
 				continue;
 			if (bgn[i-1] > bgn[i])
 				continue;
 			if (bgn[i+1] > bgn[i])
 				continue;
+
 			max_args.push_back(i);
 
-			if (max_args.size() > 15)
+			// Noise generate a lot of peaks, valid sound genera less than ~20 significative peaks
+			if (max_args.size() >= 20) {
 				return std::nan("");
+			}
 
 		}
 
-		if (max_args.size() <= 1)
+		// Only 0 in the list, should never happen, at less ma is in the list
+		if (max_args.size() < 1)
 			return std::nan("");
-		if (max_args.size() <= 2)
-			return max_args[1];
+
+		// Only one peak found, return this value.
+		if (max_args.size() == 1)
+			return ref_freq*freq_factor;
 
 
-		// sort regarding max picks
-		std::sort(max_args.begin(), max_args.end(), [bgn](int a, int b) -> bool { return bgn[a] > bgn[b]; });
 
-		// Keep at most 8 hamonics
-		max_args.resize(std::min<int>(max_args.size(), 8));
+		int max_divide = -1;
+		int divide = 1;
+		for (int d = 1; d < 8; ++d) {
+			int ndiv = 0;
+			for (auto x: max_args) {
+				if (is_divisible(x, ref_freq/d, 0.2*ref_freq/d+10)) {
+					ndiv += 1;
+				}
+			}
 
-
-		// Sort again regarding freq
-		max_args.push_back(0);
-		std::sort(max_args.begin(), max_args.end());
-		float max_freq = max_args[std::min<int>(max_args.size()-1, 5)];
-
-		std::vector<T> diff;
-		diff.resize(max_args.size()-1);
-
-		for (int i = 0; i < max_args.size()-1; ++i) {
-			diff[i] = max_args[i+1]-max_args[i];
+			if (ndiv > max_divide) {
+				max_divide = ndiv;
+				divide = d;
+			}
 		}
 
-		std::sort(diff.begin(), diff.end());
-		float diff_min = diff[diff.size()/2];
+		if (max_divide < 1) {
+			return ref_freq*freq_factor;
+		} else {
+			return ref_freq*freq_factor/divide;
+		}
 
-		return max_freq/std::floor(max_freq/diff_min+0.5)*freq_factor;
 	}
 
 
 	template<typename TX>
-	double compute_freq(TX * data, std::size_t len)
+	double compute_freq(TX const * bgn, TX const * end)
 	{
-		len = std::min<std::size_t>(len, sample_length);
+		TX const * srt = std::max(bgn, end-sample_length);
+
+		min_volume += 1.0e-4;
+
+		cur_volume = 0.0;
+		for (auto x = srt; x < end; ++x) {
+			cur_volume += std::fabs(*x);
+        }
+
+		if (cur_volume < min_volume) {
+			min_volume -= 0.5*(min_volume-cur_volume);
+		}
+
+		if (cur_volume < min_volume * 5.0)
+			return std::nan("");
 
 		// reverse the signal, ensuring the analysis occure to last aquired data.
-		TX * end = &data[len-1];
-		for (int i = 0; i < len; ++i, --end) {
-            g_fft_ibuffer[i] = std::complex<T>((*end) * gaussian_filter[i], 0.0f);
+		for(int i = 0; srt < end; ++srt, ++i) {
+            g_fft_ibuffer[i] = std::complex<T>{static_cast<T>(*srt) * gaussian_filter[i]};
         }
 
 		g_fft_plan.transform(&g_fft_ibuffer[0], &g_fft_obuffer[0]);
@@ -171,7 +194,7 @@ struct tone_handler {
 			spectrum[i] = std::abs(g_fft_obuffer[i]);
 		}
 
-		return find_frequency(&spectrum[0], &spectrum[g_fft_n/2]);
+		return find_frequency(spectrum.begin(), spectrum.end());
 	}
 
 	template<typename TX>
