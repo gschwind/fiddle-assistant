@@ -137,7 +137,15 @@ public class ScaleNotesView extends View {
 
     public void updateCurrentNote(double new_note) {
 
-        current_note = (float)new_note;
+        if (!Double.valueOf(new_note).isNaN() && !Float.valueOf(current_note).isNaN()) {
+            if (Math.abs(new_note-current_note)<1.0) {
+                current_note += (new_note-current_note)*0.1;
+            } else {
+                current_note = (float)new_note;
+            }
+        } else {
+            current_note = (float) new_note;
+        }
 
         scale_current_note = scale_goto_note;
 
