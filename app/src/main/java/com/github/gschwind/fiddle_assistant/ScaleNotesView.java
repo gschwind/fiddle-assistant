@@ -29,6 +29,15 @@ import android.view.View;
 
 public class ScaleNotesView extends View {
 
+    static double sclamp(double a, double x, double b)
+    {
+        if (x < a)
+            return 0.0;
+        if (x > b)
+            return 1.0;
+        return (x-a)/(b-a);
+    }
+
     int width;
     int height;
 
@@ -109,13 +118,13 @@ public class ScaleNotesView extends View {
         if (!Float.valueOf(current_note).isNaN() && (Math.abs(current_note- scale_current_note) < 0.5)) {
             previous_note_shown = current_note;
             double pos = Math.min(0.5, Math.max(-0.5, previous_note_shown - scale_current_note));
-            double alpha = Math.min(1.0, Math.abs(pos*3.0));
+            double alpha = sclamp(0.01, Math.abs(pos), 0.08);
             cursorColor.setARGB(255, (int)(255.0*Math.min(1.0, 2*alpha)), (int)(255.0*Math.min(1.0, 2*(1.0 - alpha))), 0);
             canvas.drawCircle((float)(width/2+pos*scale_half_tone_width), baseline, circle_radius, blackColor);
             canvas.drawCircle((float)(width/2+pos*scale_half_tone_width), baseline, circle_radius-2, cursorColor);
         } else if ((Math.abs(previous_note_shown - scale_current_note) < 0.5)) {
             double pos = Math.min(0.5, Math.max(-0.5, previous_note_shown - scale_current_note));
-            double alpha = Math.min(1.0, Math.abs(pos*3.0));
+            double alpha = sclamp(0.01, Math.abs(pos), 0.08);
             cursorColor.setARGB(255, (int)(255.0*Math.min(1.0, 2*alpha)), (int)(255.0*Math.min(1.0, 2*(1.0 - alpha))), 0);
             canvas.drawCircle((float)(width/2+pos*scale_half_tone_width), baseline, circle_radius, blackColor);
             canvas.drawCircle((float)(width/2+pos*scale_half_tone_width), baseline, circle_radius-2, cursorColor);
@@ -138,10 +147,10 @@ public class ScaleNotesView extends View {
     public void updateCurrentNote(double new_note) {
 
         if (!Double.valueOf(new_note).isNaN() && !Float.valueOf(current_note).isNaN()) {
-            if (Math.abs(new_note-current_note)<1.0) {
-                current_note += (new_note-current_note)*0.1;
+            if (Math.abs(new_note-current_note)<4.0) {
+                current_note += (new_note-current_note)*0.5;
             } else {
-                current_note = (float)new_note;
+                current_note = (float) new_note;
             }
         } else {
             current_note = (float) new_note;

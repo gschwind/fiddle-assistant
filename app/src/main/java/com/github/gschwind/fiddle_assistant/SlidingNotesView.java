@@ -34,7 +34,6 @@ import java.util.ListIterator;
 
 
 public class SlidingNotesView extends View {
-    static boolean BLACK_BACKGROUND = false;
 
     int POINT_HEIGHT;
     int POINT_BORDER_WIDTH;
@@ -60,14 +59,12 @@ public class SlidingNotesView extends View {
 
     int base_line;
 
-    float max_count;
-    float base_note;
-    float goto_note;
+    float mean_note; //< track a weighted average of last valid notes.
+    float base_note; //< The current note at the center of the slider.
 
     float previous_note;
 
     float last_valid_note;
-    float goto_valid_note;
 
     static String[] note_names_english = {"A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"};
     static String[] note_names_french = {"La", "La#", "Si", "Do", "Do#", "Re", "Re#", "Mi", "Fa", "Fa#", "Sol", "Sol#"};
@@ -76,6 +73,14 @@ public class SlidingNotesView extends View {
 
     Paint[] lineNoteColor;
 
+    static double sclamp(double a, double x, double b)
+    {
+        if (x < a)
+            return 0.0;
+        if (x > b)
+            return 1.0;
+        return (x-a)/(b-a);
+    }
 
     public SlidingNotesView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -120,13 +125,12 @@ public class SlidingNotesView extends View {
         cursorColor.setTextSize(density*12.0f);
         cursorColor.setTypeface(Typeface.DEFAULT_BOLD);
 
-
         lineNoteColor = new Paint[] {majorColor, minorColor, majorColor, referColor, minorColor,
                 majorColor, minorColor, majorColor, majorColor, minorColor, majorColor, minorColor};
 
-        base_note = 0.0f;
-        goto_note = 0.0f;
-        last_valid_note = 48f;
+        mean_note = 48.0f;
+        base_note = 48.0f;
+        last_valid_note = 48.0f;
 
         notes.addFirst(Float.NaN);
 
@@ -146,16 +150,22 @@ public class SlidingNotesView extends View {
     }
 
     private void drawNotesBlackBackground(Canvas canvas) {
-        int local_base_line = height - 6;
+        int local_middle_line = height/2;
 
         int i = 0;
         ListIterator<Float> iter = notes.listIterator();
         while (iter.hasNext()) {
             Float f = iter.next();
             if (!f.isNaN()) {
-                double y = (f - base_note) * LINE_SPACING;
+                int y = Math.round(local_middle_line - (f - base_note) * LINE_SPACING);
                 if (y > -2.0 * LINE_SPACING && y < height + 2 * LINE_SPACING) {
-                    canvas.drawRect((i * density * 2 + LEFT_SPACING - POINT_HEIGHT), (int) Math.round(local_base_line - y - POINT_HEIGHT), (i * density * 2 + LEFT_SPACING + POINT_HEIGHT), (int) Math.round(local_base_line - y + POINT_HEIGHT), blackColor);
+                    int x = Math.round(i * density * 2 + LEFT_SPACING);
+                    canvas.drawRect(
+                            x - POINT_HEIGHT - POINT_BORDER_WIDTH,
+                            y - POINT_HEIGHT - POINT_BORDER_WIDTH,
+                            x + POINT_HEIGHT + POINT_BORDER_WIDTH,
+                           y + POINT_HEIGHT + POINT_BORDER_WIDTH,
+                            blackColor);
                 }
             }
             ++i;
@@ -166,23 +176,17 @@ public class SlidingNotesView extends View {
     protected void onDraw (Canvas canvas) {
         super.onDraw(canvas);
 
-        if (BLACK_BACKGROUND) {
-            canvas.drawRect(0, 0, width, height, blackColor);
-        }
+        int local_middle_line = height/2;
 
-        int local_base_line = height - 6;
-
-        base_note += 0.1*(goto_note-base_note);
-        last_valid_note += 0.1*(goto_valid_note-last_valid_note);
-
-        canvas.drawRect(0, (local_base_line-(last_valid_note-base_note-1.5f)*LINE_SPACING), width, (local_base_line-(last_valid_note-base_note+1.5f)*LINE_SPACING), cursorColor);
+        canvas.drawRect(0, (local_middle_line-(last_valid_note-base_note-1.5f)*LINE_SPACING),
+                width, (local_middle_line-(last_valid_note-base_note+1.5f)*LINE_SPACING), cursorColor);
 
         for (int i = 0; i < 120; ++i) {
-            float y = (i-base_note) * LINE_SPACING;
+            float y = local_middle_line - (i-base_note) * LINE_SPACING;
 
             if (y > -2.0f*LINE_SPACING && y < height+2.0f*LINE_SPACING) {
-                canvas.drawRect(LEFT_SPACING, (local_base_line - y - 1), width, (local_base_line - y + 1), lineNoteColor[i % 12]);
-                canvas.drawText(note_names[i % 12], density*3.0f, (local_base_line - y + grayColor.getTextSize()/2.0f), grayColor);
+                canvas.drawRect(LEFT_SPACING, (y - 1), width, (y + 1), lineNoteColor[i % 12]);
+                canvas.drawText(note_names[i % 12], density*3.0f, (y + grayColor.getTextSize()/2.0f), grayColor);
             }
         }
 
@@ -190,23 +194,26 @@ public class SlidingNotesView extends View {
 
         clipNotesList(count);
 
-        if (!BLACK_BACKGROUND) {
-            drawNotesBlackBackground(canvas);
-        }
+        drawNotesBlackBackground(canvas);
 
         int i = 0;
         ListIterator<Float> iter = notes.listIterator();
         while (iter.hasNext()) {
             Float f = iter.next();
             if (!f.isNaN()) {
-//                double x = ((f+12.0*100-0.5 - (Math.floor((f+12.0*100+0.5)/12.0)*12.0))+0.5) * LINE_SPACING;
-                double y = (f - base_note) * LINE_SPACING;
+                int y = Math.round(local_middle_line - (f - base_note) * LINE_SPACING);
                 if (y > -2.0f * LINE_SPACING && y < height + 2.0f * LINE_SPACING) {
+                    int x = Math.round(i * density * 2 + LEFT_SPACING);
                     double note = Math.round(f);
                     double pos = Math.min(0.5, Math.max(-0.5, f - note));
-                    double alpha = Math.min(1.0, Math.abs(pos * 3.0));
+                    double alpha = sclamp(0.05, Math.abs(pos), 0.15);
                     notesColor.setARGB(255, (int) (255.0 * Math.min(1.0, 2 * alpha)), (int) (255.0 * Math.min(1.0, 2 * (1.0 - alpha))), 0);
-                    canvas.drawRect((i * density * 2 + LEFT_SPACING - POINT_HEIGHT + POINT_BORDER_WIDTH), (int) Math.round(local_base_line - y - POINT_HEIGHT + POINT_BORDER_WIDTH), (i * density * 2 + LEFT_SPACING + POINT_HEIGHT - POINT_BORDER_WIDTH), (int) Math.round(local_base_line - y + POINT_HEIGHT - POINT_BORDER_WIDTH), notesColor);
+                    canvas.drawRect(
+                            x - POINT_HEIGHT,
+                            y - POINT_HEIGHT,
+                            x + POINT_HEIGHT,
+                            y + POINT_HEIGHT,
+                            notesColor);
                 }
             }
             ++i;
@@ -220,10 +227,6 @@ public class SlidingNotesView extends View {
 
         width = w;
         height = h;
-
-        base_line = height/2;
-
-        max_count = (float)Math.floor((height-12)/LINE_SPACING);
 
         invalidate();
         requestLayout();
@@ -252,32 +255,45 @@ public class SlidingNotesView extends View {
         invalidate();
     }
 
+    public boolean validateNote(float current_note) {
+        if (Float.valueOf(current_note).isNaN()) {
+            return false;
+        }
+
+        if (Math.abs(previous_note - current_note) > 4.0f) {
+            return false;
+        }
+
+        return true;
+    }
+
     public void appendDouble(double f) {
 
         float current_note = (float)f;
 
-        if (!Float.valueOf(current_note).isNaN()) {
-            if (Math.abs(previous_note - current_note) < 0.5) {
-                notes.addFirst(new Float(current_note));
-                goto_valid_note = current_note;
-            } else {
-                notes.addFirst(Float.NaN);
-            }
-        } else {
+        if (!validateNote(current_note)) {
             notes.addFirst(Float.NaN);
+            previous_note = current_note;
+            invalidate();
+            return;
+        }
+
+        notes.addFirst(new Float(current_note));
+
+        last_valid_note = current_note;
+
+        float r0 = 0.02f;
+        mean_note = r0*(current_note-mean_note)+mean_note;
+
+        if (mean_note > base_note+1.0f) {
+            base_note = mean_note-1.0f;
+        }
+
+        if (mean_note < base_note-1.0f) {
+            base_note = Math.max(0.0f, mean_note+1.0f);
         }
 
         previous_note = current_note;
-
-
-        if (current_note > base_note+max_count) {
-            goto_note = base_note + 4;
-        }
-
-        if (current_note < base_note+2) {
-            goto_note = Math.max(0.0f, base_note-4);
-        }
-
         invalidate();
     }
 

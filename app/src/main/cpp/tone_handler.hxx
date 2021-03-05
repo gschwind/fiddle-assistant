@@ -39,7 +39,7 @@ struct tone_handler {
 	std::array<T, g_fft_n/2> spectrum;
 
 	std::vector<int> max_args;
-	std::vector<int> diff;
+	std::vector<int> mask;
 
 	double freq_factor;
 	int sample_length;
@@ -66,7 +66,7 @@ struct tone_handler {
 
 	tone_handler () {
 		max_args.reserve(50); // avoid useless realloc.
-		diff.reserve(50);
+		mask.reserve(50);
 
 		min_volume = 1.0e10;
 		cur_volume = 0.0;
@@ -83,7 +83,7 @@ struct tone_handler {
 		freq_factor = static_cast<double>(sample_rate)/static_cast<double>(g_fft_n);
 
 		double time_delta = 1.0/sample_rate;
-		double sigma = 1.0/(2.0*_PI()*30.0);
+		double sigma = 1.0/(2.0*_PI()*40.0);
 		// sample_length = 2.0*4.0*sigma/time_delta; that can be simplified as follow
 		sample_length = 6.0*sample_rate*sigma+1;
 
@@ -138,13 +138,13 @@ struct tone_handler {
 			return ref_freq*freq_factor;
 
 
-
 		int max_divide = -1;
 		int divide = 1;
 		for (int d = 1; d < 8; ++d) {
+
 			int ndiv = 0;
 			for (auto x: max_args) {
-				if (is_divisible(x, ref_freq/d, 0.2*ref_freq/d+10)) {
+				if (is_divisible(x, ref_freq/d, 15*freq_factor) and x > 50*freq_factor) {
 					ndiv += 1;
 				}
 			}
@@ -152,6 +152,14 @@ struct tone_handler {
 			if (ndiv > max_divide) {
 				max_divide = ndiv;
 				divide = d;
+			}
+		}
+
+		// Debug stuff
+		mask.resize(max_args.size());
+		if (max_divide > 0) {
+			for (int i = 0; i < max_args.size(); ++i) {
+				mask[i] = is_divisible(max_args[i], ref_freq/divide, 15*freq_factor) and max_args[i] > 50*freq_factor;
 			}
 		}
 
