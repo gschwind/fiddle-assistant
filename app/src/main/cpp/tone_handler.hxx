@@ -48,6 +48,8 @@ struct tone_handler {
 	double min_volume;
 	double cur_volume;
 
+	double min_volume_sensitivity;
+
 	static inline constexpr float _PI() { return 3.14159265358979323846; }
 
 	// not-normed gaussian.
@@ -70,6 +72,13 @@ struct tone_handler {
 
 		min_volume = 1.0e10;
 		cur_volume = 0.0;
+
+		min_volume_sensitivity = 5.0;
+
+	}
+
+	void set_min_volume_sensitivity(double sensitivity) {
+        min_volume_sensitivity = sensitivity;
 	}
 
 	int init_sample_rate(int sample_rate) {
@@ -188,7 +197,7 @@ struct tone_handler {
 			min_volume -= 0.5*(min_volume-cur_volume);
 		}
 
-		if (cur_volume < min_volume * 5.0)
+		if (cur_volume < min_volume * min_volume_sensitivity)
 			return std::nan("");
 
 		// reverse the signal, ensuring the analysis occure to last aquired data.

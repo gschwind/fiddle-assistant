@@ -120,3 +120,13 @@ Java_com_github_gschwind_fiddle_1assistant_AudioThread_sampleEnergy(JNIEnv *env,
     env->ReleaseShortArrayElements(arr, data, 0);
     return freq;
 }
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_github_gschwind_fiddle_1assistant_AudioThread__1setMinVolumeSensitivity(JNIEnv *env,
+                                                                               jobject thiz,
+                                                                               jdouble sensitivity) {
+    auto * thandler = getHandle<tone_handler<float, 1u<<15u>>(env, thiz);
+    if (thandler != nullptr)
+        thandler->set_min_volume_sensitivity(sensitivity);
+}

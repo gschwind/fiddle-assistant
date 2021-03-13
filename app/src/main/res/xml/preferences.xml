@@ -28,4 +28,12 @@
         app:defaultValue="30"
         app:useSimpleSummaryProvider="true" />
 
+    <EditTextPreference
+        android:defaultValue="5"
+        android:key="min_volume_sensitivity"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Set minimum Volume Sensitivity\nvalid: [0;1e9] default: 5\nIncrease value to be less sensitive to noise"
+        app:useSimpleSummaryProvider="true" />
+
 </PreferenceScreen>

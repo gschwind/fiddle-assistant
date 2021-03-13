@@ -86,10 +86,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         handler = new MainActivityHandler(Looper.getMainLooper(), this);
 
-        audioThread = new AudioThread(handler);
-
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+
+        double d = Double.valueOf(sharedPreferences.getString("min_volume_sensitivity", "5"));
+        audioThread = new AudioThread(handler, d);
 
         slidingNotesView.updateNoteNames(sharedPreferences.getString("music_notation", "english"));
         scaleNotesView.updateNoteNames(sharedPreferences.getString("music_notation", "english"));
@@ -188,6 +189,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             int i = Integer.valueOf(sharedPreferences.getString("sample_frequency", "30"));
             if (audioThread != null)
                 audioThread.updateSampleFrequency(i);
+        } else if (key.equals("min_volume_sensitivity")) {
+            double d = Double.valueOf(sharedPreferences.getString("min_volume_sensitivity", "5"));
+            if (audioThread != null)
+                audioThread.setMinVolumeSensitivity(d);
         }
 
     }

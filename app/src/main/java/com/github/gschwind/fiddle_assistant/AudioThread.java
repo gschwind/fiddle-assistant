@@ -34,6 +34,8 @@ public class AudioThread implements Runnable {
     private long opaqueNativeHandle; // store the pointer
     private int length_of_sample; // store the pointer
 
+    private double _min_volume_sensitivity;
+
     private int next_analisys_freq_counter;
     private int rate;
 
@@ -49,10 +51,10 @@ public class AudioThread implements Runnable {
     private AudioRecord audioRecord;
     private volatile boolean isAudioRecording;
 
-    public AudioThread(MainActivityHandler handler) {
+    public AudioThread(MainActivityHandler handler, double min_volume_sensitivity) {
         this.handler = handler;
         this.opaqueNativeHandle = 0;
-
+        this._min_volume_sensitivity = min_volume_sensitivity;
     }
 
     private static Pair<Integer, Integer> getValidSampleRates() {
@@ -98,6 +100,8 @@ public class AudioThread implements Runnable {
             Log.e(LOG_TAG, "failled to initSampleRate");
             return;
         }
+
+        _setMinVolumeSensitivity(_min_volume_sensitivity);
 
         try {
             // store 2 seconds of record to avoid much move/copy buffer.
@@ -198,10 +202,16 @@ public class AudioThread implements Runnable {
         next_analisys_freq_counter = rate / NOTE_SAMPLE_RATE;
     }
 
+    public void setMinVolumeSensitivity(double sensitivity) {
+        _min_volume_sensitivity = sensitivity;
+        if (opaqueNativeHandle != 0)
+            _setMinVolumeSensitivity(_min_volume_sensitivity);
+    }
+
     public native int initSampleRate(int sampleRate);
     public native float computeFreq(short[] arr, int offset, int length);
     public native float sampleEnergy(short[] arr, int offset, int length);
+    private native void _setMinVolumeSensitivity(double sensitivity);
     public native void dispose();
-
 
 }
