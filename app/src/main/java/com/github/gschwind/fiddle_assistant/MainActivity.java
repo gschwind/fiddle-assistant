@@ -93,6 +93,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         audioThread = new AudioThread(handler, d);
 
         slidingNotesView.updateNoteNames(sharedPreferences.getString("music_notation", "english"));
+        slidingNotesView.setNoteMinTolerance(Float.valueOf(sharedPreferences.getString("sliding_note_min_tolerance", "5")));
+        slidingNotesView.setNoteMaxTolerance(Float.valueOf(sharedPreferences.getString("sliding_note_max_tolerance", "5")));
         scaleNotesView.updateNoteNames(sharedPreferences.getString("music_notation", "english"));
 
         base_frequency = Float.valueOf(sharedPreferences.getString("base_frequency", "440"));
@@ -193,6 +195,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             double d = Double.valueOf(sharedPreferences.getString("min_volume_sensitivity", "5"));
             if (audioThread != null)
                 audioThread.setMinVolumeSensitivity(d);
+        } else if (key.equals("sliding_note_min_tolerance")) {
+            slidingNotesView.setNoteMinTolerance(Float.valueOf(sharedPreferences.getString("sliding_note_min_tolerance", "5")));
+        } else if (key.equals("sliding_note_max_tolerance")) {
+            slidingNotesView.setNoteMinTolerance(Float.valueOf(sharedPreferences.getString("sliding_note_max_tolerance", "5")));
         }
 
     }

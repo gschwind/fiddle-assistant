@@ -56,6 +56,8 @@ public class SlidingNotesView extends View {
     int height;
 
     float density;
+    float note_min_tolerance;
+    float note_max_tolerance;
 
     int base_line;
 
@@ -86,6 +88,8 @@ public class SlidingNotesView extends View {
         super(context, attrs);
 
         density = getResources().getDisplayMetrics().density;
+        note_min_tolerance = 0.05f;
+        note_max_tolerance = 0.15f;
 
         LINE_SPACING = (int)(density*15.0f)+1;
         POINT_HEIGHT = (int)(density*4.0f)+1;
@@ -206,7 +210,7 @@ public class SlidingNotesView extends View {
                     int x = Math.round(i * density * 2 + LEFT_SPACING);
                     double note = Math.round(f);
                     double pos = Math.min(0.5, Math.max(-0.5, f - note));
-                    double alpha = sclamp(0.05, Math.abs(pos), 0.15);
+                    double alpha = sclamp(note_min_tolerance, Math.abs(pos), note_max_tolerance);
                     notesColor.setARGB(255, (int) (255.0 * Math.min(1.0, 2 * alpha)), (int) (255.0 * Math.min(1.0, 2 * (1.0 - alpha))), 0);
                     canvas.drawRect(
                             x - POINT_HEIGHT,
@@ -295,6 +299,14 @@ public class SlidingNotesView extends View {
 
         previous_note = current_note;
         invalidate();
+    }
+
+    public void setNoteMinTolerance(float centile) {
+        note_min_tolerance = Math.min(centile/100.0f, note_max_tolerance-0.01f);
+    }
+
+    public void setNoteMaxTolerance(float centile) {
+        note_max_tolerance = Math.max(centile/100.0f, note_min_tolerance+0.01f);
     }
 
 }

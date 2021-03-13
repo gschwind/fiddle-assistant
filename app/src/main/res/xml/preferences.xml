@@ -36,4 +36,18 @@
         android:title="Set minimum Volume Sensitivity\nvalid: [0;1e9] default: 5\nIncrease value to be less sensitive to noise"
         app:useSimpleSummaryProvider="true" />
 
+    <EditTextPreference
+        android:defaultValue="5"
+        android:key="sliding_note_min_tolerance"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Set the centile limit of green, note under this tolerance value will be green. Must be below the red value" />
+
+    <EditTextPreference
+        android:defaultValue="15"
+        android:key="sliding_note_max_tolerance"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Set the centile limit of red, note above this tolerance value will be red. Must be above the green value." />
+
 </PreferenceScreen>
