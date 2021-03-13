@@ -260,7 +260,7 @@ public class SlidingNotesView extends View {
             return false;
         }
 
-        if (Math.abs(previous_note - current_note) > 4.0f) {
+        if (Math.abs(previous_note - current_note) > 0.5f) {
             return false;
         }
 
