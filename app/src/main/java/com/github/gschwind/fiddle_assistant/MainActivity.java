@@ -193,6 +193,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 audioThread.updateSampleFrequency(i);
         } else if (key.equals("min_volume_sensitivity")) {
             double d = Double.valueOf(sharedPreferences.getString("min_volume_sensitivity", "5"));
+            if (d < 0.0)
+                d = 0.0;
+            if (d > 1e9)
+                d = 1e9;
             if (audioThread != null)
                 audioThread.setMinVolumeSensitivity(d);
         } else if (key.equals("sliding_note_min_tolerance")) {
