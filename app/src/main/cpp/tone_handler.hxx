@@ -38,11 +38,12 @@ struct tone_handler {
 	std::array<T, g_fft_n> gaussian_filter;
 	std::array<T, g_fft_n> spectrum;
 
+	std::vector<int> max_args;
+	std::vector<double> diff;
+
 	double freq_factor;
 	int sample_length;
 	int _sample_rate;
-
-	double max_spec;
 
 	static inline constexpr float _PI() { return std::atan(1.0)*4.0; }
 
@@ -53,7 +54,7 @@ struct tone_handler {
 	}
 
 	tone_handler () {
-		max_spec = 0.0;
+
 	}
 
 	int init_sample_rate(int sample_rate) {
@@ -90,67 +91,58 @@ struct tone_handler {
 	double find_frequency(T * bgn, T * end)
 	{
 
-		auto max_elem = std::max_element(bgn, end);
-		float freq = std::distance(bgn, max_elem);
+		auto max_elem = std::max_element(bgn+2, end);
+		double ref_freq = std::distance(bgn, max_elem);
 		float max = *max_elem;
 
-		// Implement a slow max diminishing
-		if (max_spec < max) {
-			max_spec = max;
-		} else {
-            max_spec += 0.001*(max-max_spec);
-		}
+		max_args.resize(0); // remove all elements
 
-//		if (max < 0.2*max_spec)
-//			return std::nan("");
-
-		std::vector<int> max_args;
-		max_args.reserve(20); // avoid useless realloc.
-
-		//max_args.push_back(0); // 0 is always a valid frequency for the diff
-		for (int i = 200; i < (g_fft_n/2-1); ++i) {
-			if (bgn[i] < max*0.05)
+		for (int i = 150.0/freq_factor; i < (g_fft_n/2-1); ++i) {
+			if (bgn[i] < max*0.07)
 				continue;
 			if (bgn[i-1] > bgn[i])
 				continue;
 			if (bgn[i+1] > bgn[i])
 				continue;
-			max_args.push_back(i);
 
-			if (max_args.size() > 15)
-				return std::nan("");
+			//Keeponly the 15 higest peak
+			max_args.insert(std::upper_bound(max_args.begin(), max_args.end(), i,
+											 [bgn](int a, int b) -> bool { return bgn[a] > bgn[b]; }), i);
+			if (max_args.size() > 5) {
+				max_args.resize(5);
+			}
 
 		}
 
-		if (max_args.size() <= 1)
-			return std::nan("");
-		if (max_args.size() <= 2)
-			return max_args[1];
-
-
-		// sort regarding max picks
-		std::sort(max_args.begin(), max_args.end(), [bgn](int a, int b) -> bool { return bgn[a] > bgn[b]; });
-
-		// Keep at most 8 hamonics
-		max_args.resize(std::min<int>(max_args.size(), 8));
-
-
-		// Sort again regarding freq
 		max_args.push_back(0);
 		std::sort(max_args.begin(), max_args.end());
-		float max_freq = max_args[std::min<int>(max_args.size()-1, 5)];
 
-		std::vector<T> diff;
-		diff.resize(max_args.size()-1);
+		if (max_args.size() == 1) {
+			double f = max_args[1]*freq_factor;
+			// only one peaks is detected is high
+			// other wise it's noise
+			return f>440.0?f:std::nan("");
+		} else if (max_args.size() < 4) {
+			// If few peak the first one or the max one should be ok.
+			double f = max_args[1]*freq_factor;
+			return f>220.0?f:std::nan("");
+		} else {
+			diff.resize(max_args.size() - 1);
+			for (int i = 1; i < max_args.size(); ++i) {
+				diff[i - 1] = max_args[i] - max_args[i - 1];
+			}
 
-		for (int i = 0; i < max_args.size()-1; ++i) {
-			diff[i] = max_args[i+1]-max_args[i];
+			std::sort(diff.begin(), diff.end());
+
+			for (auto &x: diff) {
+				double f = x * freq_factor;
+				if (f > 150.0)
+					return f;
+			}
+
+			return std::nan("");
 		}
 
-		std::sort(diff.begin(), diff.end());
-		float diff_min = diff[diff.size()/2];
-
-		return max_freq/std::floor(max_freq/diff_min+0.5)*freq_factor;
 	}
 
 
